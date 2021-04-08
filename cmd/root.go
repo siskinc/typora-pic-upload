@@ -19,6 +19,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/sirupsen/logrus"
+	"github.com/siskinc/typora-pic-upload/internal/uploader"
 	"github.com/spf13/cobra"
 
 	homedir "github.com/mitchellh/go-homedir"
@@ -40,7 +42,16 @@ to quickly create a Cobra application.`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("args: %+v\n", args)
+		uploaderType := viper.GetString("uploader")
+		factory := &uploader.UploaderFactory{}
+		uploaderObj := factory.CreateUploader(uploaderType)
+		for i := range args {
+			url, err := uploaderObj.Upload(args[i])
+			if err != nil {
+				logrus.Errorf("uploader type: %s, path: %s, err: %v", uploaderType, args[i], err)
+			}
+			fmt.Println(url)
+		}
 	},
 }
 

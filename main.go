@@ -19,4 +19,5 @@ import "github.com/siskinc/typora-pic-upload/cmd"
 
 func main() {
 	cmd.Execute()
+	logFile.Close()
 }
