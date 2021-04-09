@@ -3,8 +3,6 @@ package uploader
 import (
 	"context"
 	"fmt"
-	"net/http"
-	"net/url"
 	"os"
 	"strings"
 
@@ -14,6 +12,7 @@ import (
 	"github.com/siskinc/typora-pic-upload/internal/filex"
 	"github.com/siskinc/typora-pic-upload/internal/pathx"
 	"github.com/siskinc/typora-pic-upload/internal/urlx"
+	"github.com/siskinc/typora-pic-upload/internal/httpx"
 	"github.com/spf13/viper"
 )
 
@@ -81,20 +80,9 @@ func (uld *QiniuUploader) Upload(path string) (string, error) {
 		UseCdnDomains: false,
 	}
 
-	//设置代理
-	var proxyURI *url.URL
-	if uld.Proxy != "" {
-		proxyURI, _ = url.Parse(uld.Proxy)
-	}
-
-	//构建代理client对象
-	client := http.Client{
-		Transport: &http.Transport{
-			Proxy: http.ProxyURL(proxyURI),
-		},
-	}
+	client := httpx.GetClinet()
 	// 构建表单上传的对象
-	formUploader := storage.NewFormUploaderEx(&cfg, &storage.Client{Client: &client})
+	formUploader := storage.NewFormUploaderEx(&cfg, &storage.Client{Client: client})
 	ret := storage.PutRet{}
 	err = formUploader.PutFile(context.Background(), &ret, upToken, key, path, nil)
 	if err != nil {
