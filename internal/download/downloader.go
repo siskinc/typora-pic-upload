@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 
 	"github.com/sirupsen/logrus"
+	"github.com/siskinc/typora-pic-upload/internal/httpx"
 	"github.com/siskinc/typora-pic-upload/internal/pathx"
 )
 
@@ -33,7 +33,8 @@ func (d *Downloader) DownloadFile(url string) (string, error) {
 		logrus.Errorf("generator file path from url have an err: %v, url: %s", err, url)
 		return "", nil
 	}
-	resp, err := http.Get(url)
+	client := httpx.GetClinet()
+	resp, err := client.Get(url)
 	if err != nil {
 		return "", err
 	}
