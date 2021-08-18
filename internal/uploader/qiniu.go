@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"strings"
 
 	"github.com/qiniu/go-sdk/v7/auth"
@@ -41,32 +42,34 @@ func (uld *QiniuUploader) skip(path string) bool {
 	return strings.HasPrefix(path, uld.Url)
 }
 
-func (uld *QiniuUploader) Upload(path string) (string, error) {
-	if uld.skip(path) {
-		return path, nil
+func (uld *QiniuUploader) Upload(filePath string) (string, error) {
+	if uld.skip(filePath) {
+		return filePath, nil
 	}
 	downloaderObj := download.Downloader{}
 	defer downloaderObj.Clear()
 
-	if pathx.IsHttpFile(path) {
+	if pathx.IsHttpFile(filePath) {
 		var err error
-		path, err = downloaderObj.DownloadFile(path)
+		filePath, err = downloaderObj.DownloadFile(filePath)
 		if err != nil {
 			return "", err
 		}
 	}
 
-	f, err := os.Open(path)
+	f, err := os.Open(filePath)
 	if err != nil {
-		err = fmt.Errorf("open %s have an error: %v", path, err)
+		err = fmt.Errorf("open %s have an error: %v", filePath, err)
 		return "", err
 	}
 	defer f.Close()
 	filename := filex.GetMd5(f)
 	key := urlx.Join(uld.Path, filename)
-	if !strings.HasSuffix(key, ".png") {
-		key = fmt.Sprintf("%s.png", key)
+	fileSuffix := path.Ext(filePath)
+	if fileSuffix == "" {
+		fileSuffix = ".png"
 	}
+	key = fmt.Sprintf("%s%s", key, fileSuffix)
 
 	putPolicy := storage.PutPolicy{
 		Scope: fmt.Sprintf("%s:%s", uld.Bucket, key),
@@ -96,7 +99,7 @@ func (uld *QiniuUploader) Upload(path string) (string, error) {
 	// 构建表单上传的对象
 	formUploader := storage.NewFormUploaderEx(&cfg, &storage.Client{Client: &client})
 	ret := storage.PutRet{}
-	err = formUploader.PutFile(context.Background(), &ret, upToken, key, path, nil)
+	err = formUploader.PutFile(context.Background(), &ret, upToken, key, filePath, nil)
 	if err != nil {
 		err = fmt.Errorf("put file to qiniu have an err: %v", err)
 		return "", err
