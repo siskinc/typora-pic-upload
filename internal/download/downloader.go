@@ -2,13 +2,16 @@ package download
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/siskinc/typora-pic-upload/internal/httpx"
 	"github.com/siskinc/typora-pic-upload/internal/pathx"
+	"github.com/siskinc/typora-pic-upload/internal/strx"
 )
 
 type Downloader struct {
@@ -27,11 +30,32 @@ func (d *Downloader) Clear() {
 	}
 }
 
+func (d *Downloader) isValidFileName(fileName string) bool {
+	dotCount := 0
+	for i := 0; i <= len(fileName); i++ {
+		if fileName[i] == '.' {
+			dotCount++
+			continue
+		}
+		if !strx.IsNumberOrAlpha(fileName[i]) {
+			return false
+		}
+	}
+	return dotCount <= 1
+}
+
+func (d *Downloader) newFileName() string {
+	return fmt.Sprintf("%d", time.Now().Unix())
+}
+
 func (d *Downloader) DownloadFile(url string) (string, error) {
 	fileName, err := pathx.GenUploadFilePathFormURL(url)
 	if err != nil {
 		logrus.Errorf("generator file path from url have an err: %v, url: %s", err, url)
 		return "", nil
+	}
+	if !d.isValidFileName(fileName) {
+		fileName = d.newFileName()
 	}
 	client := httpx.GetClinet()
 	resp, err := client.Get(url)
