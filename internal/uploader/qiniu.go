@@ -11,9 +11,10 @@ import (
 	"github.com/qiniu/go-sdk/v7/storage"
 	"github.com/siskinc/typora-pic-upload/internal/download"
 	"github.com/siskinc/typora-pic-upload/internal/filex"
-	"github.com/siskinc/typora-pic-upload/internal/pathx"
-	"github.com/siskinc/typora-pic-upload/internal/urlx"
 	"github.com/siskinc/typora-pic-upload/internal/httpx"
+	"github.com/siskinc/typora-pic-upload/internal/pathx"
+	"github.com/siskinc/typora-pic-upload/internal/strx"
+	"github.com/siskinc/typora-pic-upload/internal/urlx"
 	"github.com/spf13/viper"
 )
 
@@ -41,6 +42,21 @@ func (uld *QiniuUploader) skip(path string) bool {
 	return strings.HasPrefix(path, uld.Url)
 }
 
+func (uld *QiniuUploader) fixFileNameSuffix(suffix string) string {
+	if suffix == "" {
+		return suffix
+	}
+	endIndex := 1
+	for i := 1; i < len(suffix); i++ {
+		endIndex = i
+		if !strx.IsAlpha(suffix[i]) {
+			endIndex -= 1
+			break
+		}
+	}
+	return suffix[:endIndex+1]
+}
+
 func (uld *QiniuUploader) Upload(filePath string) (string, error) {
 	if uld.skip(filePath) {
 		return filePath, nil
@@ -65,6 +81,7 @@ func (uld *QiniuUploader) Upload(filePath string) (string, error) {
 	filename := filex.GetMd5(f)
 	key := urlx.Join(uld.Path, filename)
 	fileSuffix := path.Ext(filePath)
+	fileSuffix = uld.fixFileNameSuffix(fileSuffix)
 	if fileSuffix == "" {
 		fileSuffix = ".png"
 	}
