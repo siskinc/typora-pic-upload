@@ -32,7 +32,7 @@ func (d *Downloader) Clear() {
 
 func (d *Downloader) isValidFileName(fileName string) bool {
 	dotCount := 0
-	for i := 0; i <= len(fileName); i++ {
+	for i := 0; i < len(fileName); i++ {
 		if fileName[i] == '.' {
 			dotCount++
 			continue
